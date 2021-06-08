@@ -1,0 +1,12 @@
+{
+	"cosmosdb": {
+		"endpoint": "COSMOSDB_ENDPOINT",
+		"key": "COSMOSDB_KEY",
+		"database": "COSMOSDB_DATABASE",
+		"container": "COSMOSDB_CONTAINER"
+	},
+	"vaccinefinder": {
+		"region": "VACCINE_FINDER_AWS_REGION",
+		"bucket": "VACCINE_FINDER_S3_BUCKET"
+	}
+}

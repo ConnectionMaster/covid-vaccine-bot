@@ -2,16 +2,24 @@
  * Copyright (c) Microsoft. All rights reserved.
  * Licensed under the MIT license. See LICENSE file in the project.
  */
+import parse from 'csv-parse/lib/sync'
 import { getAppStore } from '../store/store'
-import { processCSVData, convertCSVDataToObj } from '../utils/dataUtils'
-import { b64_to_utf8, utf8_to_b64 } from '../utils/textUtils'
+import { convertCSVDataToObj } from '../utils/dataUtils'
+import {
+	b64_to_utf8,
+	utf8_to_b64,
+	createCSVDataString,
+} from '../utils/textUtils'
 
-const github = {
-	REPO_OWNER: process.env.REACT_APP_REPO_OWNER,
-	REPO_NAME: process.env.REACT_APP_REPO_NAME,
-}
+const githubRepoOwner = process.env.REACT_APP_REPO_OWNER
+const githubRepoName = process.env.REACT_APP_REPO_NAME
 
-const createPath = (obj: any, pathInput: string, value: any = undefined) => {
+const createPath = (
+	obj: any,
+	pathInput: string,
+	value: any = undefined,
+	setNewValue = false
+) => {
 	let path = pathInput.split('/')
 	let current = obj
 	while (path.length > 1) {
@@ -23,11 +31,42 @@ const createPath = (obj: any, pathInput: string, value: any = undefined) => {
 		current = current[head]
 	}
 	if (!current[path[0]]) {
-		current[path[0]] = {}
+		current[path[0]] = setNewValue ? value : {}
 	} else {
 		current[path[0]] = { ...current[path[0]], ...value }
 	}
-	return obj
+}
+
+export const gitFetch = async (
+	url: string,
+	options: any = {}
+): Promise<any> => {
+	const { headers, json = true, ..._options } = options
+	const { accessToken } = getAppStore()
+	const apiUrl = url.startsWith('https://api.github.com/')
+		? url
+		: `https://api.github.com/repos/${githubRepoOwner}/${githubRepoName}/${url}`
+
+	const response = await fetch(apiUrl, {
+		method: 'GET',
+		headers: {
+			Authorization: `token ${accessToken}`,
+			...headers,
+		},
+		..._options,
+	})
+
+	if (response.ok === false) {
+		const error = Object.assign(new Error(), {
+			status: response.status,
+			ok: response.ok,
+		})
+
+		throw error
+	}
+
+	if (json) return await response.json()
+	else return response
 }
 
 const getContent = async (url: string, token: string) => {
@@ -42,222 +81,580 @@ const getContent = async (url: string, token: string) => {
 	return data
 }
 
+const createWorkingBranch = async (state: any, branchName: string) => {
+	if (state.mainBranch)
+		return await gitFetch(`git/refs`, {
+			method: 'POST',
+			body: JSON.stringify({
+				ref: branchName,
+				sha: state.mainBranch.commit.sha,
+			}),
+		})
+	else return undefined
+}
+
+const commitFileChanges = async (
+	method: string,
+	actionText: string,
+	branchName: string,
+	filePath: string,
+	content: any,
+	fileSha: string
+) => {
+	const query = `contents/packages/plans/data/policies/${filePath}`
+	return await gitFetch(query, {
+		method,
+		body: JSON.stringify({
+			branch: branchName,
+			message: `${actionText} ${filePath}`,
+			content: content,
+			sha: fileSha,
+		}),
+	})
+}
+
+const commitChanges = async (state: any, branchName: string) => {
+	let branchLastCommitSha = ''
+	const { committedDeletes, pendingChangeList } = state
+	const upsertedList: any = {}
+
+	if (pendingChangeList) {
+		const { added, modified, deleted } = pendingChangeList
+		let locationResp: any = {}
+
+		// Add and Modify
+		const upserted = [...added, ...modified].filter(
+			(item, idx, arr) =>
+				arr.findIndex((t) => t.pathKey === item.pathKey) === idx
+		)
+
+		for (const item of upserted) {
+			const skipFetch =
+				!item.data.info?.path || committedDeletes.includes(item.data.info.path)
+
+			if (!skipFetch) {
+				if (item.data.info.content) {
+					//Info
+					locationResp = await commitFileChanges(
+						'PUT',
+						'Updated',
+						branchName,
+						item.data.info.path,
+						utf8_to_b64(JSON.stringify(item.data.info.content, null, '\t')),
+						item.data.info.sha
+					)
+					upsertedList[item.data.info.path] = locationResp
+				}
+
+				if (item.data?.vaccination?.content) {
+					//Vaccination
+					locationResp = await commitFileChanges(
+						'PUT',
+						'Updated',
+						branchName,
+						item.data.vaccination.path,
+						utf8_to_b64(
+							JSON.stringify(item.data.vaccination.content, null, '\t')
+						),
+						item.data.vaccination.sha
+					)
+					upsertedList[item.data.vaccination.path] = locationResp
+				}
+				if (item.data?.strings?.content) {
+					//Strings
+					locationResp = await commitFileChanges(
+						'PUT',
+						'Updated',
+						branchName,
+						item.data.strings.path,
+						utf8_to_b64(createCSVDataString(item.data.strings.content)),
+						item.data.strings.sha
+					)
+					upsertedList[item.data.strings.path] = locationResp
+				}
+			}
+		}
+		// Remove
+		for (const item of deleted) {
+			const skipFetch =
+				!item.data.info?.path || committedDeletes.includes(item.data.info.path)
+
+			let fileSha = ''
+			if (!skipFetch) {
+				//Info
+				if (item.data.info) {
+					fileSha =
+						item.data.info.path in upsertedList
+							? upsertedList[item.data.info.path].content.sha
+							: item.data.info?.sha
+					if (fileSha) {
+						locationResp = await commitFileChanges(
+							'DELETE',
+							'Removed',
+							branchName,
+							item.data.info.path,
+							undefined,
+							fileSha
+						)
+					}
+				}
+
+				//Vaccination
+				if (item.data.vaccination) {
+					fileSha =
+						item.data.vaccination.path in upsertedList
+							? upsertedList[item.data.vaccination.path].content.sha
+							: item.data.vaccination?.sha
+					if (fileSha) {
+						locationResp = await commitFileChanges(
+							'DELETE',
+							'Removed',
+							branchName,
+							item.data.vaccination.path,
+							undefined,
+							fileSha
+						)
+					}
+				}
+
+				if (item.data.strings) {
+					//Strings
+					fileSha =
+						item.data.strings.path in upsertedList
+							? upsertedList[item.data.strings.path].content.sha
+							: item.data.strings?.sha
+
+					if (fileSha) {
+						locationResp = await commitFileChanges(
+							'DELETE',
+							'Removed',
+							branchName,
+							item.data.strings.path,
+							undefined,
+							fileSha
+						)
+					}
+				}
+
+				// MD file
+				if (item.data?.desc_md) {
+					locationResp = await commitFileChanges(
+						'DELETE',
+						'Removed',
+						branchName,
+						item.data.desc_md.path,
+						undefined,
+						item.data.desc_md?.sha
+					)
+				}
+			}
+		}
+
+		branchLastCommitSha = locationResp?.commit?.sha ?? branchLastCommitSha
+	}
+
+	return { branchLastCommitSha, updatedFiles: upsertedList }
+}
+
 export const repoServices = async (
 	command: string,
 	extraData: any = undefined
 ): Promise<any | undefined> => {
-	const state = getAppStore()
+	try {
+		const state = getAppStore()
+		let branchName = `refs/heads/${state.username}-policy-${Date.now()}`
 
-	if (command === 'getBranches') {
-		const response = await fetch(
-			`https://api.github.com/repos/${github.REPO_OWNER}/${github.REPO_NAME}/branches`,
-			{
-				method: 'GET',
-				headers: {
-					Authorization: `token ${state.accessToken}`,
-				},
-			}
-		)
+		switch (command) {
+			case 'checkAccess':
+				return await gitFetch(`collaborators/${state.username}`, {
+					headers: {
+						Accept: 'application/vnd.github.v3+json',
+					},
+					json: false,
+				})
 
-		const data = await response.json()
+			case 'getBranches':
+				return await gitFetch(`branches?per_page=100`)
 
-		return data
-	}
-
-	if (command === 'getRepoFileData') {
-		const dataFolderResp = await fetch(
-			`https://api.github.com/repos/${github.REPO_OWNER}/${github.REPO_NAME}/contents/packages/plans/data`,
-			{
-				method: 'GET',
-				headers: {
-					Authorization: `token ${state.accessToken}`,
-				},
-			}
-		)
-		const dataFolderObj = await dataFolderResp.json()
-		const policyFolderGitUrl = dataFolderObj.find(
-			(folder: { name: string }) => folder.name === 'policies'
-		).git_url
-		const response = await fetch(`${policyFolderGitUrl}?recursive=true`, {
-			method: 'GET',
-			headers: {
-				Authorization: `token ${state.accessToken}`,
-			},
-		})
-		const data = await response.json()
-		const stateData: any = {}
-		data.tree.forEach(async (element: any) => {
-			if (element.type === 'tree') {
-				createPath(stateData, element.path)
-			} else {
-				const lastInstance = element.path.lastIndexOf('/')
-				const filePath = element.path.substring(0, lastInstance)
-				const fileName: string = element.path.substring(lastInstance + 1)
-				const fileType: string = fileName.split('.')[0]
-				const fileObj: any = {}
-
-				const fileData = await getContent(
-					String(element.url),
-					String(state.accessToken)
+			case 'getCommits':
+				return await gitFetch(
+					`commits?since=${extraData.since}&sha=${extraData.sha}`
 				)
 
-				switch (fileName.split('.')[1].toLowerCase()) {
-					case 'json':
-						fileObj[fileType] = {
-							name: fileName,
-							type: fileType,
-							sha: element.sha,
-							url: element.url,
-							path: element.path,
-							content: JSON.parse(b64_to_utf8(fileData.content)),
-						}
-						break
-					case 'md':
-						fileObj['desc_md'] = {
-							name: fileName,
-							type: fileType,
-							sha: element.sha,
-							url: element.url,
-							path: element.path,
-							content: b64_to_utf8(fileData.content),
+			case 'getUserWorkingBranches':
+				const userPrs = await repoServices('getUserPullRequests')
+				const allBranches = extraData[0]
+				const usersBranches = allBranches.filter(
+					(branch: any) => branch.name.split('-policy-')[0] === state.username
+				)
+
+				const userWorkingBranches = usersBranches
+					.filter((branch: any) => {
+						return !userPrs.find((pr: any) => pr?.head?.ref === branch.name)
+					})
+					.sort((a: any, b: any) => (a.name > b.name ? -1 : 1))
+
+				return userWorkingBranches
+
+			case 'getUserPullRequests':
+				const prs = await gitFetch(`issues?creator=${state.username}`)
+				const populatedPRs: any[] = await Promise.all(
+					prs.map(async (item: any) => gitFetch(`pulls/${item.number}`))
+				)
+
+				return populatedPRs
+			case 'getPullRequests':
+				const loadPRResponse = await gitFetch(`pulls/${extraData}`)
+				const commitResp = await gitFetch(`pulls/${extraData}/commits`)
+
+				return { data: loadPRResponse, commits: commitResp }
+			case 'getIssues':
+				return await gitFetch(`issues`)
+
+			case 'getRepoFileData': {
+				const query = !extraData
+					? `contents/packages/plans/data?ref=${process.env.REACT_APP_MAIN_BRANCH}`
+					: `contents/packages/plans/data?ref=${extraData}`
+
+				const dataFolderObj = await gitFetch(query)
+				const policyFolderGitUrl = dataFolderObj.find(
+					(folder: { name: string }) => folder.name === 'policies'
+				).git_url
+				const loadPolicyFolderResponse = await gitFetch(
+					`${policyFolderGitUrl}?recursive=true`
+				)
+				const policyFolderData = loadPolicyFolderResponse
+				const stateData: any = {}
+
+				policyFolderData.tree.forEach((element: any) => {
+					if (element.type === 'tree') {
+						createPath(stateData, element.path)
+					} else {
+						const lastInstance = element.path.lastIndexOf('/')
+						const filePath = element.path.substring(0, lastInstance)
+						const fileName: string = element.path.substring(lastInstance + 1)
+						const fileType: string = fileName.split('.')[0]
+						const fileObj: any = {}
+
+						switch (fileName.split('.')[1].toLowerCase()) {
+							case 'json':
+								fileObj[fileType] = {
+									name: fileName,
+									type: fileType,
+									sha: element.sha,
+									url: element.url,
+									path: element.path,
+									content: null,
+								}
+								break
+							case 'md':
+								fileObj['desc_md'] = {
+									name: fileName,
+									type: fileType,
+									sha: element.sha,
+									url: element.url,
+									path: element.path,
+									content: null,
+								}
+
+								break
+							case 'csv':
+								fileObj['strings'] = {
+									name: fileName,
+									type: fileType,
+									sha: element.sha,
+									url: element.url,
+									path: element.path,
+									content: null,
+								}
+
+								break
 						}
 
-						break
-					case 'csv':
-						fileObj['strings'] = {
-							name: fileName,
-							type: fileType,
-							sha: element.sha,
-							url: element.url,
-							path: element.path,
-							content: convertCSVDataToObj(
-								processCSVData(b64_to_utf8(fileData.content))
-							),
+						if (fileObj !== {}) {
+							createPath(stateData, filePath, fileObj)
 						}
+					}
+				})
 
-						break
+				for (const element of Object.keys(stateData)) {
+					const location = stateData[element]
+
+					const [infoData, stringsData, vaccinationData] = await Promise.all([
+						gitFetch(String(location.info.url)),
+						gitFetch(String(location.strings.url)),
+						gitFetch(String(location.vaccination.url)),
+					])
+
+					location.info.content = JSON.parse(b64_to_utf8(infoData.content))
+					location.strings.content = convertCSVDataToObj(
+						parse(b64_to_utf8(stringsData.content), { columns: true })
+					)
+					location.vaccination.content = JSON.parse(
+						b64_to_utf8(vaccinationData.content)
+					)
 				}
 
-				if (fileObj !== {}) {
-					createPath(stateData, filePath, fileObj)
-				}
+				return stateData
 			}
-		})
+			case 'loadAllLocationData': {
+				const { locationId, repoRef } = extraData
+				const query = !repoRef
+					? `contents/packages/plans/data/policies/${locationId}?ref=${process.env.REACT_APP_MAIN_BRANCH}`
+					: `contents/packages/plans/data/policies/${locationId}?ref=${repoRef}`
 
-		const localizationFolderGitUrl = dataFolderObj.find(
-			(folder: { name: string }) => folder.name === 'localization'
-		).git_url
+				const dataFolderObj = await gitFetch(query)
 
-		const localizationResponse = await fetch(
-			`${localizationFolderGitUrl}?recursive=true`,
-			{
-				method: 'GET',
-				headers: {
-					Authorization: `token ${state.accessToken}`,
-				},
+				const locationRegionsFolder = dataFolderObj.find(
+					(folder: { name: string }) => folder.name === 'regions'
+				).git_url
+
+				const loadRegionsResponse = await gitFetch(
+					`${locationRegionsFolder}?recursive=true`
+				)
+
+				const stateData: any = {}
+
+				const promiseList: any[] = []
+
+				loadRegionsResponse.tree.forEach(async (element: any) => {
+					if (element.type !== 'tree') {
+						const lastInstance = element.path.lastIndexOf('/')
+						const fileName: string = element.path.substring(lastInstance + 1)
+						const fileExt = fileName.split('.')[1].toLowerCase()
+						if (['csv', 'json'].includes(fileExt)) {
+							promiseList.push(
+								fetch(`${element.url}`, {
+									method: 'GET',
+									headers: {
+										Authorization: `token ${state.accessToken}`,
+									},
+								})
+									.then((result) => result.json())
+									.then((data) => [element, data])
+							)
+						}
+					}
+				})
+
+				const response = await Promise.allSettled(promiseList)
+
+				response.forEach((filePromise: any) => {
+					if (filePromise.status === 'fulfilled' && filePromise.value) {
+						const fileInfo = filePromise.value[0]
+						const fileData = filePromise.value[1]
+
+						const lastInstance = fileInfo.path.lastIndexOf('/')
+						const filePath = fileInfo.path.substring(0, lastInstance)
+						const fileName: string = fileInfo.path.substring(lastInstance + 1)
+						const fileType: string = fileName.split('.')[0]
+						const fileObj: any = {}
+						const fileExt = fileName.split('.')[1].toLowerCase()
+
+						switch (fileExt) {
+							case 'json': {
+								fileObj[fileType] = {
+									name: fileName,
+									type: fileType,
+									sha: fileInfo.sha,
+									url: fileInfo.url,
+									path: `${locationId}/regions/${fileInfo.path}`,
+									content: JSON.parse(b64_to_utf8(fileData.content)),
+								}
+								break
+							}
+
+							case 'csv': {
+								fileObj['strings'] = {
+									name: fileName,
+									type: fileType,
+									sha: fileInfo.sha,
+									url: fileInfo.url,
+									path: `${locationId}/regions/${fileInfo.path}`,
+									content: convertCSVDataToObj(
+										parse(b64_to_utf8(fileData.content), { columns: true })
+									),
+								}
+
+								break
+							}
+						}
+
+						if (fileObj !== {}) {
+							createPath(stateData, filePath, fileObj, true)
+						}
+					}
+				})
+
+				return stateData
 			}
-		)
 
-		const localizationData = await localizationResponse.json()
+			case 'loadAllStringsData':
+				const query = !extraData
+					? `contents/packages/plans/data?ref=${process.env.REACT_APP_MAIN_BRANCH}`
+					: `contents/packages/plans/data?ref=${extraData}`
 
-		const customStrings = localizationData.tree.find(
-			(file: { path: string }) => file.path === 'custom-strings.csv'
-		)
-		const cdcStateNames = localizationData.tree.find(
-			(file: { path: string }) => file.path === 'cdc-state-names.csv'
-		)
-		const cdcStateLinks = localizationData.tree.find(
-			(file: { path: string }) => file.path === 'cdc-state-links.csv'
-		)
+				const dataFolderObj = await gitFetch(query)
+				const policyFolderGitUrl = dataFolderObj.find(
+					(folder: { name: string }) => folder.name === 'policies'
+				).git_url
+				const loadPolicyFolderResponse = await gitFetch(
+					`${policyFolderGitUrl}?recursive=true`
+				)
+				const policyFolderData = loadPolicyFolderResponse
+				const stringsData: any = []
 
-		let customStringsData: any = {}
-		let cdcStateNamesData: any = {}
-		let cdcStateLinksData: any = {}
+				for (const value of Object.values(policyFolderData.tree)) {
+					const element = value as any
+					if (element.type !== 'tree') {
+						const lastInstance = element.path.lastIndexOf('/')
+						const fileName: string = element.path.substring(lastInstance + 1)
+						const fileType: string = fileName.split('.')[0]
+						const fileExt = fileName.split('.')[1].toLowerCase()
 
-		const customStringsDataParse = await getContent(
-			String(customStrings.url),
-			String(state.accessToken)
-		)
-		customStringsData = convertCSVDataToObj(
-			processCSVData(b64_to_utf8(customStringsDataParse.content))
-		)
+						if (fileExt === 'csv') {
+							const fileData = await getContent(
+								String(element.url),
+								String(state.accessToken)
+							)
 
-		const cdcStateNamesDataParse = await getContent(
-			String(cdcStateNames.url),
-			String(state.accessToken)
-		)
-		cdcStateNamesData = convertCSVDataToObj(
-			processCSVData(b64_to_utf8(cdcStateNamesDataParse.content))
-		)
-
-		const cdcStateLinksDataParse = await getContent(
-			String(cdcStateLinks.url),
-			String(state.accessToken)
-		)
-		cdcStateLinksData = convertCSVDataToObj(
-			processCSVData(b64_to_utf8(cdcStateLinksDataParse.content))
-		)
-
-		customStrings['content'] = customStringsData
-		cdcStateNames['content'] = cdcStateNamesData
-		cdcStateLinks['content'] = cdcStateLinksData
-
-		return [stateData, customStrings, cdcStateNames, cdcStateLinks]
-	}
-
-	if (command === 'createPR') {
-		if (state?.mainBranch) {
-			const mainBranch = state?.mainBranch
-			const branchName = `refs/heads/${state.username}-policy-${Date.now()}`
-			const response = await fetch(
-				`https://api.github.com/repos/${github.REPO_OWNER}/${github.REPO_NAME}/git/refs`,
-				{
-					method: 'POST',
-					headers: {
-						Authorization: `token ${state.accessToken}`,
-					},
-					body: JSON.stringify({ ref: branchName, sha: mainBranch.commit.sha }),
+							stringsData.push({
+								name: fileName,
+								type: fileType,
+								sha: element.sha,
+								url: element.url,
+								path: element.path,
+								content: convertCSVDataToObj(
+									parse(b64_to_utf8(fileData.content), { columns: true })
+								),
+							})
+						}
+					}
 				}
-			)
 
-			const newBranch = await response.json()
-			console.log('newbranch', newBranch)
+				return stringsData
 
-			const fileResp = await fetch(
-				`https://api.github.com/repos/${github.REPO_OWNER}/${github.REPO_NAME}/contents/packages/plans/data/policies/${extraData.path}`,
-				{
-					method: 'PUT',
-					headers: {
-						Authorization: `token ${state.accessToken}`,
-					},
-					body: JSON.stringify({
-						branch: branchName,
-						message: 'auto file creation',
-						content: utf8_to_b64('[FileContent]'),
-						sha: extraData.sha,
-					}),
+			case 'getLocationData':
+				const location = extraData
+
+				const pathArray = location.info.path.split('/')
+				pathArray.splice(-1, 1)
+				const pathStr = pathArray.join('/')
+
+				if (location.info) {
+					const infoData = await getContent(
+						String(location.info.url),
+						String(state.accessToken)
+					)
+
+					location.info.content = JSON.parse(b64_to_utf8(infoData.content))
 				}
-			)
-			console.log('fileresp', fileResp)
 
-			const prResp = await fetch(
-				`https://api.github.com/repos/${github.REPO_OWNER}/${github.REPO_NAME}/pulls`,
-				{
-					method: 'POST',
-					headers: {
-						Authorization: `token ${state.accessToken}`,
-					},
-					body: JSON.stringify({
-						head: branchName,
-						base: 'main',
-						title: 'auto PR creation',
-					}),
+				if (location.strings && !location.strings.content) {
+					const stringsData = await getContent(
+						String(location.strings.url),
+						String(state.accessToken)
+					)
+
+					location.strings.content = convertCSVDataToObj(
+						parse(b64_to_utf8(stringsData.content), { columns: true })
+					)
+				} else if (!location.strings) {
+					location.strings = {
+						name: location.info.content.id + '.csv',
+						path: `${pathStr}/${location.info.content.id}.csv`,
+						sha: '',
+						type: location.info.content.id,
+						url: '',
+						content: {},
+					}
 				}
-			)
 
-			return prResp.json()
+				if (location.vaccination) {
+					const vaccinationData = await getContent(
+						String(location.vaccination.url),
+						String(state.accessToken)
+					)
+					location.vaccination.content = JSON.parse(
+						b64_to_utf8(vaccinationData.content)
+					)
+				}
+
+				return location
+			case 'createWorkingBranch':
+				if (state.mainBranch) {
+					return await createWorkingBranch(state, branchName)
+				}
+				break
+			case 'commitChanges':
+				if (extraData) {
+					return await commitChanges(state, extraData.branchName)
+				}
+				break
+			case 'createPR':
+				if (state.mainBranch) {
+					const prFormData = extraData[1]
+					if (state.loadedPRData) {
+						branchName = `refs/heads/${state.loadedPRData.head.ref}`
+					} else if (state.userWorkingBranch) {
+						branchName = `refs/heads/${state.userWorkingBranch}`
+					} else {
+						await createWorkingBranch(state, branchName)
+					}
+
+					if (state.pendingChanges) {
+						await commitChanges(state, branchName)
+					}
+
+					let prTitle = ''
+					if (!state.loadedPRData) {
+						prTitle = !prFormData.prTitle
+							? 'auto PR creation'
+							: prFormData.prTitle
+						const prResp = await gitFetch(`pulls`, {
+							method: 'POST',
+							body: JSON.stringify({
+								head: branchName,
+								base: process.env.REACT_APP_MAIN_BRANCH,
+								title: prTitle,
+								body: prFormData.prDetails,
+							}),
+						})
+
+						await gitFetch(`issues/${prResp.number}/labels`, {
+							method: 'POST',
+							body: JSON.stringify({
+								labels: [
+									'data-composer-submission',
+									'requires-data-accuracy-review',
+								],
+							}),
+						})
+
+						return prResp
+					} else {
+						prTitle = !prFormData.prTitle
+							? state.loadedPRData.title
+							: prFormData.prTitle
+						const prDetails = !prFormData.prDetails
+							? state.loadedPRData.body
+							: prFormData.prDetails
+						await gitFetch(`pulls/${state.loadedPRData.number}`, {
+							method: 'PATCH',
+							body: JSON.stringify({
+								title: prTitle,
+								body: prDetails,
+							}),
+						})
+
+						return state.loadedPRData
+					}
+				}
+				break
 		}
-	}
 
-	return undefined
+		return undefined
+	} catch (error) {
+		return error
+	}
 }

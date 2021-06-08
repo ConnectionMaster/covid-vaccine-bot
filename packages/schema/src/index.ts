@@ -4,6 +4,7 @@
  */
 
 export type RegionType =
+	| 'country'
 	| 'state'
 	| 'territory'
 	| 'tribal_land'
@@ -91,13 +92,15 @@ export interface VaccinationPlan {
 	 */
 	links?: Partial<Record<LinkType, Link>>
 	activePhase?: string
+	noPhaseLabel?: boolean
+	unknownPhase?: boolean
 	phases?: RolloutPhase[]
 }
 
 export interface Link {
 	url: string
-	text?: string
-	description?: string
+	text?: string | undefined
+	description?: string | undefined
 
 	/**
 	 * Scraping hins for the current link (only applies to info links ATM).
@@ -131,9 +134,29 @@ export interface Qualification {
 	question: string
 
 	/**
+	 * A short-form, SMS-friendly variant of the question. The system wil default to 'question'
+	 */
+	questionSms?: string
+
+	/**
+	 * A voice-agent friendly of the question. The system wil default to 'question'
+	 */
+	questionVoice?: string
+
+	/**
 	 * The ID of the clarifying text to provide (e.g. what defines an essential worker)
 	 */
 	moreInfoText?: string
+
+	/**
+	 * A short-form, SMS-friendly variant of the more-info text. The system will default to 'moreInfoText'
+	 */
+	moreInfoTextSms?: string
+
+	/**
+	 * A voice-agent friendly variant of the more-info text. The system will default to 'moreInfoText'
+	 */
+	moreInfoTextVoice?: string
 
 	/**
 	 * A URL to provide to elaborate on eligibility details

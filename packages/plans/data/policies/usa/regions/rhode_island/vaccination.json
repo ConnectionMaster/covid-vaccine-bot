@@ -1,0 +1,38 @@
+{
+	"links": {
+		"info": {
+			"text": "cdc/rhode_island/state_link",
+			"url": "https://covid.ri.gov/vaccination",
+			"scrapeQuery": [
+				"article"
+			]
+		},
+		"scheduling": {
+			"url": "https://www.vaccinateri.org/",
+			"text": "c19.links/schedule_vax"
+		},
+		"scheduling_phone": {
+			"url": "tel:844-930-1779",
+			"text": "c19.link/scheduling.phone.ri"
+		},
+		"worflow": {}
+	},
+	"activePhase": "current",
+	"phases": [
+		{
+			"id": "current",
+			"label": "Current",
+			"qualifications": [
+				{
+					"question": "c19.eligibility.question/age.are_you_at",
+					"questionSms": "c19.eligibility.question.sms/age.are_you_at",
+					"questionVoice": "c19.eligibility.question.voice/age.are_you_at",
+					"moreInfoText": "c19.eligibility.moreinfo/age.are_you_at.ri.current",
+					"moreInfoTextSms": "c19.eligibility.moreinfo.sms/age.are_you_at.ri.current",
+					"moreInfoTextVoice": "c19.eligibility.moreinfo.voice/age.are_you_at.ri.current"
+				}
+			]
+		}
+	],
+	"noPhaseLabel": true
+}

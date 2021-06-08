@@ -1,0 +1,46 @@
+{
+	"links": {
+		"info": {
+			"text": "cdc/tennessee/state_link",
+			"url": "https://www.tn.gov/health/cedep/ncov/covid-19-vaccine-information.html"
+		},
+		"eligibility": {
+			"url": "https://www.tn.gov/content/tn/health/cedep/ncov/covid-19-vaccine-information/getting-a-covid-19-vaccine-information.html",
+			"content": "pdf"
+		},
+		"eligibility_plan": {
+			"url": "https://covid19.tn.gov/covid-19-vaccines/vaccine-phases/"
+		},
+		"workflow": {
+			"url": "https://covid19.tn.gov/covid-19-vaccines/eligibility/",
+			"text": "c19.links/vax_quiz"
+		},
+		"scheduling_phone": {
+			"url": "tel:866-442-5301",
+			"text": "c19.link/scheduling.phone.tn"
+		},
+		"scheduling": {
+			"url": "https://vaccinate.tn.gov/",
+			"text": "c19.links/schedule_vax"
+		},
+		"worflow": {}
+	},
+	"activePhase": "3",
+	"phases": [
+		{
+			"id": "3",
+			"label": "3",
+			"qualifications": [
+				{
+					"question": "c19.eligibility.question/age.are_you_at",
+					"questionSms": "c19.eligibility.question.sms/age.are_you_at",
+					"questionVoice": "c19.eligibility.question.voice/age.are_you_at",
+					"moreInfoText": "c19.eligibility.moreinfo/age.are_you_at.tn.3",
+					"moreInfoTextSms": "c19.eligibility.moreinfo.sms/age.are_you_at.tn.3",
+					"moreInfoTextVoice": "c19.eligibility.moreinfo.voice/age.are_you_at.tn.3"
+				}
+			]
+		}
+	],
+	"noPhaseLabel": false
+}

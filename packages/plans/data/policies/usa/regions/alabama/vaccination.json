@@ -1,0 +1,39 @@
+{
+	"links": {
+		"eligibility_plan": {
+			"url": "https://www.alabamapublichealth.gov/covid19vaccine/assets/cov-vaccine-prioritization.pdf"
+		},
+		"info": {
+			"url": "https://www.alabamapublichealth.gov/covid19vaccine/index.html",
+			"text": "cdc/alabama/state_link"
+		},
+		"workflow": {
+			"url": "https://govstatus.egov.com/vaccine-eligibility-form",
+			"text": "c19.links/vax_quiz"
+		},
+		"scheduling_phone": {
+			"url": "tel:1-855-566-5333",
+			"text": "c19.link/scheduling.phone.al",
+			"description": "c19.link/scheduling.phone.description.al"
+		},
+		"worflow": {}
+	},
+	"activePhase": "2",
+	"phases": [
+		{
+			"id": "2",
+			"label": "2",
+			"qualifications": [
+				{
+					"question": "c19.eligibility.question/age.are_you_at",
+					"questionSms": "c19.eligibility.question.sms/age.are_you_at",
+					"questionVoice": "c19.eligibility.question.voice/age.are_you_at",
+					"moreInfoText": "c19.eligibility.moreinfo/age.are_you_at.al.2",
+					"moreInfoTextSms": "c19.eligibility.moreinfo.sms/age.are_you_at.al.2",
+					"moreInfoTextVoice": "c19.eligibility.moreinfo.voice/age.are_you_at.al.2"
+				}
+			]
+		}
+	],
+	"noPhaseLabel": false
+}

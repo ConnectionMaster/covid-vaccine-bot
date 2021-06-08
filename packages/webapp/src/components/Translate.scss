@@ -1,0 +1,161 @@
+@import '@fluentui/react/dist/sass/_References';
+
+.translatePageContainer {
+	display: flex;
+	flex-direction: column;
+
+	.listTitle {
+		display: flex;
+		border-bottom: 1px solid $ms-color-gray40;
+		cursor: pointer;
+
+		&:hover {
+			background-color: $ms-color-gray40;
+		}
+	}
+
+	.groupToggleIcon {
+		padding: 0 10px;
+	}
+
+	section {
+		margin: 0 6px;
+	}
+
+	input[type='file'] {
+		display: none;
+	}
+	.ms-MessageBar--error {
+		margin-bottom: 1em;
+	}
+	.loadingContainer {
+		display: flex;
+		justify-content: center;
+		text-align: center;
+
+		.ms-ProgressIndicator {
+			width: 90%;
+			margin-top: 20%;
+		}
+	}
+}
+
+.fileDropZone{
+	width:80%;
+	height:40vh;
+	border: 1px dashed black;
+	margin: auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    p {
+    	text-align: center;
+    	padding:10px;
+    }
+
+	button {
+		border: none;
+		background: none;
+		font-size: inherit;
+		color: inherit;
+		padding: 0px;
+		cursor: pointer;
+		margin: 5px;
+
+		i {
+			vertical-align: middle;
+			margin-right: 5px;
+			line-height: 18px;
+
+			&.blue {
+				color: #0078d4;
+			}
+		}
+	}
+
+	.fileOptions {
+		text-align: center;
+	}
+}
+
+.filterGroup {
+	display: flex;
+	flex-direction: row;
+	margin-bottom: 10px;
+	margin-left: 30px;
+	justify-content: space-between;
+
+	.ms-Dropdown-container {
+		margin-right: 20px;
+		width: 200px;
+		display: inline-block;
+		vertical-align: middle;
+	}
+	label {
+		line-height: 30px;
+		font-size: 14px;
+		font-weight: bold;
+		margin-right: 0.5em;
+	}
+
+	.fileOptions {
+		flex-basis: 35%;
+		display: flex;
+		justify-content: space-around;
+	}
+}
+
+.miscFilterGroup {
+	display: flex;
+	flex-direction: row;
+	padding: 10px 10px 10px 30px;
+	margin-bottom: 10px;
+	background-color: $ms-color-gray30;
+
+	.ms-Dropdown-container {
+		margin-right: 20px;
+		width: 200px;
+	}
+}
+
+.translateListRow {
+	display: flex;
+	flex-direction: row;
+	padding: 10px 10px 10px 46px;
+	align-items: center;
+
+	&.altRow {
+		background-color: $ms-color-gray20;
+	}
+
+	&.qualifier,
+	&.misc {
+		.fromCol {
+			flex: 2;
+			padding-right: 35px;
+		}
+
+		.toCol {
+			flex: 2;
+		}
+	}
+
+	.fromCol {
+		flex: 2;
+	}
+
+	.toCol {
+		flex: 2;
+		margin-right: 10px;
+
+		&:last-child {
+			margin-right: 0;
+		}
+	}
+}
+
+.emptyTranslateListRow {
+	display: flex;
+	padding: 20px 20px 20px 46px;
+}

@@ -1,0 +1,47 @@
+{
+	"links": {
+		"info": {
+			"text": "cdc/nebraska/state_link",
+			"url": "http://dhhs.ne.gov/Pages/COVID-19-Vaccine-Information.aspx",
+			"scrapeQuery": [
+				".dhhs-page-content.dhhs-clearfix"
+			]
+		},
+		"workflow": {
+			"url": "https://vaccinate.ne.gov/"
+		},
+		"eligibility_plan": {
+			"url": "https://dhhs.ne.gov/Pages/COVID-19-Vaccine-Information.aspx#SectionLink2"
+		},
+		"scheduling": {
+			"url": "https://vaccinate.ne.gov/",
+			"text": "c19.links/schedule_vax"
+		},
+		"scheduling_phone": {
+			"url": "tel:833-998-2275",
+			"text": "c19.link/scheduling.phone.ne"
+		},
+		"eligibility": {
+			"url": "https://dhhs.ne.gov/Documents/COVID-19-Vaccine-Phase-1B-Prioritization.pdf"
+		},
+		"worflow": {}
+	},
+	"activePhase": "2b",
+	"phases": [
+		{
+			"id": "2b",
+			"label": "2B",
+			"qualifications": [
+				{
+					"question": "c19.eligibility.question/age.are_you_at",
+					"questionSms": "c19.eligibility.question.sms/age.are_you_at",
+					"questionVoice": "c19.eligibility.question.voice/age.are_you_at",
+					"moreInfoText": "c19.eligibility.moreinfo/age.are_you_at.ne.2b",
+					"moreInfoTextSms": "c19.eligibility.moreinfo.sms/age.are_you_at.ne.2b",
+					"moreInfoTextVoice": "c19.eligibility.moreinfo.voice/age.are_you_at.ne.2b"
+				}
+			]
+		}
+	],
+	"noPhaseLabel": false
+}

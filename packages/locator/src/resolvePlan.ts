@@ -2,16 +2,25 @@
  * Copyright (c) Microsoft. All rights reserved.
  * Licensed under the MIT license. See LICENSE file in the project.
  */
+import { Region, RolloutPhase } from '@covid-vax-bot/plan-schema'
 import { BingLocation, PlanResult, PlanRegion } from './types'
-import { Region, RolloutPhase } from '@ms-covidbot/state-plan-schema'
 
 export function resolvePlan(
 	location: BingLocation,
 	topLevelPlans: Region[]
 ): PlanResult {
-	const stateRegion = getMatchingRegion(location, topLevelPlans)
-	if (!stateRegion || (!stateRegion.plan && !stateRegion.regions)) {
-		throw new Error(`Unable to locate plan for ${location.adminDistrict}.`)
+	const countryRegion = getMatchingRegion(location, topLevelPlans)
+	if (!countryRegion) {
+		throw new Error(
+			'Unable to locate country for location: ' + JSON.stringify(location)
+		)
+	}
+	const stateRegion = getMatchingRegion(location, countryRegion.regions || [])
+	if (!stateRegion) {
+		throw new Error(
+			'Unable to locate state/province for location: ' +
+				JSON.stringify(location)
+		)
 	}
 
 	return resolvePlanInState(location, stateRegion)
@@ -29,6 +38,8 @@ function resolvePlanInState(
 	let region = stateRegion
 	let currentPhases = stateRegion.plan?.phases ?? []
 	let currentActivePhaseLabel = stateRegion.plan?.activePhase ?? ''
+	let currentUnknownPhase = stateRegion.plan?.unknownPhase ?? false
+	let currentNoPhaseLabel = stateRegion.plan?.noPhaseLabel ?? false
 	let currentActivePhase = getActivePhase(
 		currentActivePhaseLabel,
 		currentPhases
@@ -67,12 +78,14 @@ function resolvePlanInState(
 				type: region.type,
 			})
 			currentPhases = region.plan?.phases ?? currentPhases
+			currentNoPhaseLabel = region.plan?.noPhaseLabel ?? currentNoPhaseLabel
 			currentActivePhaseLabel =
 				region.plan?.activePhase ?? currentActivePhaseLabel
 			currentActivePhase = getActivePhase(
 				currentActivePhaseLabel,
 				currentPhases
 			)
+			currentUnknownPhase = region?.plan?.unknownPhase ?? currentUnknownPhase
 			Object.assign(currentLinks, region.plan?.links || {})
 			if (matchingRegion.regions != null) {
 				regionsStack.push(matchingRegion.regions)
@@ -84,6 +97,8 @@ function resolvePlanInState(
 		regionalHierarchy,
 		links: currentLinks,
 		phase: currentActivePhase,
+		noPhaseLabel: currentNoPhaseLabel,
+		unknownPhase: currentUnknownPhase,
 	}
 }
 
@@ -100,10 +115,9 @@ function getMatchingRegion(
 ): Region | undefined {
 	return regions.filter((region: Region) => {
 		const regionMeta = REGION_TYPES[region.type]
-		return (
-			get(region, regionMeta?.policyTreeId) ===
-			get(location, regionMeta?.locationsId)
-		)
+		const treeNodeId =
+			get(region, regionMeta?.policyTreeId) ?? get(region, 'name')
+		return treeNodeId === get(location, regionMeta?.locationsId)
 	})[0]
 }
 
@@ -111,6 +125,10 @@ const REGION_TYPES: Record<
 	string,
 	{ locationsId: string; policyTreeId: string }
 > = {
+	country: {
+		locationsId: 'countryRegion',
+		policyTreeId: 'metadata.id_bing',
+	},
 	state: {
 		locationsId: 'adminDistrict',
 		policyTreeId: 'metadata.code_alpha',
@@ -135,9 +153,10 @@ const REGION_TYPES: Record<
 
 // from https://youmightnotneed.com/lodash/
 const get = (
-	obj: Record<string, any>,
+	/* eslint-disable-next-line @typescript-eslint/no-explicit-any */
+	obj: any,
 	path: string | string[],
-	defValue: any = undefined
+	defValue: unknown = undefined
 ) => {
 	// If path is not defined or it has false value
 	if (!path) return undefined

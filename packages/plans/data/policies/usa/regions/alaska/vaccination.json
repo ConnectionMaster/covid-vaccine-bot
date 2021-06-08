@@ -1,0 +1,46 @@
+{
+	"links": {
+		"eligibility": {
+			"url": "http://dhss.alaska.gov/dph/Epi/id/Pages/COVID-19/VaccineAvailability.aspx"
+		},
+		"info": {
+			"url": "http://dhss.alaska.gov/dph/Epi/id/Pages/COVID-19/vaccine.aspx",
+			"text": "cdc/alaska/state_link"
+		},
+		"providers": {
+			"url": "https://anchoragecovidvaccine.org/",
+			"text": "c19.links/vax_providers"
+		},
+		"workflow": {
+			"url": "https://hipaa.jotform.com/210366892090154",
+			"text": "c19.links/vax_quiz"
+		},
+		"scheduling": {
+			"url": "http://dhss.alaska.gov/dph/Epi/id/Pages/COVID-19/VaccineAppointments.aspx",
+			"text": "c19.links/schedule_vax"
+		},
+		"scheduling_phone": {
+			"url": "tel:907-646-3322",
+			"text": "c19.link/scheduling.phone.ak"
+		},
+		"worflow": {}
+	},
+	"activePhase": "2",
+	"phases": [
+		{
+			"id": "2",
+			"label": "2",
+			"qualifications": [
+				{
+					"question": "c19.eligibility.question/age.are_you_at",
+					"questionSms": "c19.eligibility.question.sms/age.are_you_at",
+					"questionVoice": "c19.eligibility.question.voice/age.are_you_at",
+					"moreInfoText": "c19.eligibility.moreinfo/age.are_you_at.ak.2",
+					"moreInfoTextSms": "c19.eligibility.moreinfo.sms/age.are_you_at.ak.2",
+					"moreInfoTextVoice": "c19.eligibility.moreinfo.voice/age.are_you_at.ak.2"
+				}
+			]
+		}
+	],
+	"noPhaseLabel": false
+}

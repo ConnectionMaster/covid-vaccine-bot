@@ -1,0 +1,36 @@
+{
+	"links": {
+		"info": {
+			"url": "https://covidlink.maryland.gov/content/vaccine/",
+			"text": "cdc/maryland/state_link"
+		},
+		"providers": {
+			"url": "https://covidlink.maryland.gov/content/vaccine/",
+			"text": "c19.links/vax_providers"
+		},
+		"scheduling_phone": {
+			"url": "tel:(410) 767-6500",
+			"text": "c19.link/scheduling.phone.md",
+			"description": "c19.link/scheduling.phone.description.md"
+		},
+		"worflow": {}
+	},
+	"activePhase": "2b",
+	"phases": [
+		{
+			"id": "3",
+			"label": "3",
+			"qualifications": [
+				{
+					"question": "c19.eligibility.question/age.are_you_at",
+					"questionSms": "c19.eligibility.question.sms/age.are_you_at",
+					"questionVoice": "c19.eligibility.question.voice/age.are_you_at",
+					"moreInfoText": "c19.eligibility.moreinfo/age.are_you_at.md.3",
+					"moreInfoTextSms": "c19.eligibility.moreinfo.sms/age.are_you_at.md.3",
+					"moreInfoTextVoice": "c19.eligibility.moreinfo.voice/age.are_you_at.md.3"
+				}
+			]
+		}
+	],
+	"noPhaseLabel": false
+}

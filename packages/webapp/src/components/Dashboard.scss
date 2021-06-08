@@ -1,143 +1,103 @@
 @import '@fluentui/react/dist/sass/_References';
 
-.dashboardPageContainer {
-	display: flex;
-	flex-direction: column;
-	min-height: 100vh;
-}
-
-.dashboardHeaderWrapper {
-	display: flex;
-	background-color: $ms-color-themePrimary;
-	height: 30px;
-	color: white;
-	align-items: center;
-	padding: 10px 20px;
-	/*min-width: 1360px;*/
-}
-
-.headerContainer {
-	font-weight: 600;
-	align-items: center;
-	display: flex;
-	margin-left: -10px;
-}
-
-.headerTitle {
-	margin-left: 10px;
-}
-
-.headerPersona {
-	display: flex;
-	flex-direction: row;
-	align-items: center;
-	margin-left: auto;
-}
-
-.headerUsername {
-	font-size: 14px;
-	margin-right: 10px;
-	margin-left: 10px;
-}
-
-.footerPrivacy {
-	padding: 10px;
-	display: flex;
-
-	div {
-		font-size: 12px;
-	}
-}
-
-.dashboardBodyWrapper {
-	display: flex;
-	flex-direction: row;
-	flex: 1;
-	/*    min-width: 1400px;
-*/
-}
-
-.dashboardBodyLeft {
-	display: flex;
-	flex-direction: column;
-	margin: 0 40px;
-	flex: 1;
-	min-width: 900px;
-}
-
-.dashboardBodyRight {
-	display: flex;
-	flex-direction: column;
-	background-color: $ms-color-gray20;
-	width: 500px;
-}
-
-.bodyContainer {
-	display: flex;
-	flex-direction: column;
-	flex: 1;
-}
-
-.bodyHeader {
-	padding: 50px 0;
-	display: flex;
-	flex-direction: row;
-	justify-content: space-between;
-
-	&.subContent {
-		justify-content: unset;
-	}
-}
-
-.bodyHeaderTitle {
+.dashboardPageWrapper {
 	display: flex;
 	flex-direction: column;
 
-	.mainTitle {
-		font-size: 32px;
+	.bodyHeader {
+		padding: 50px 0 20px 0;
 	}
 
-	.breadCrumbs {
-		font-size: 14px;
-		margin-bottom: 10px;
+	.sectionHeader {
+		font-size: 20px;
+		border-bottom: 1px solid $ms-color-gray40;
+		padding: 20px 0;
+	}
 
-		.crumbLink {
-			font-size: 14px;
-			cursor: pointer;
+	.sectionContent {
+		padding: 20px 0;
+
+		.actionsColumn {
+			display: flex;
+		}
+
+		.tableActionLink{
+			text-decoration:none;
+			color:unset;
+			i {
+				color: #0078d4;
+				vertical-align:middle; 
+				padding-right:5px;
+			}
+		}
+
+		.infoButton {
 			color: $ms-color-themePrimary;
+			cursor: pointer;
+		}
+
+		.loadPRButton {
+			margin-left: 20px;
+			display: flex;
+			cursor: pointer;
+
+			&.disabled, &.disabled i{
+				color: $ms-color-gray50;
+				pointer-events: none;
+			}
+
+			i {
+				color: $ms-color-themePrimary;
+				padding-right: 5px;
+				padding-top: 2px;
+				font-size: 15px;
+			}
 		}
 	}
 }
 
-.bodyContent {
-	section {
-		//box-shadow: $ms-depth-shadow-4;
-		padding: 10px;
-		margin-bottom: 20px;
-		border-radius: 2px;
-	}
+.infoCallout {
+	max-width: 800px;
 }
 
-.newLocationPanel {
-	margin-top: 50px;
+.infoCalloutBody {
+	height: 100%;
+	padding: 0 20px 10px 20px;
 }
 
-.newLocationPanelBody {
-	margin-top: 30px;
+.infoHeader {
+	color: $ms-color-themePrimary;
+	padding: 10px 0;
+	font-weight: 600;
 }
 
-.phaseGroupHeader {
-	padding: 20px 10px;
-	border-bottom: 1px solid $ms-color-gray40;
-	cursor: pointer;
+.infoBody {
+	white-space: pre-wrap;
+	word-break: break-word;
+}
+
+.refreshRow {
 	display: flex;
+	align-items: center;
 	justify-content: space-between;
+}
+
+.refreshDataHeaderButton {
+	display: flex;
+	padding: 20px;
+	cursor: pointer;
+
+	.refreshIcon {
+		margin-right: 4px;
+		color: $ms-color-themePrimary;
+	}
 
 	&:hover {
-		background-color: $ms-color-gray40;
+		font-weight: 600;
 	}
+}
 
-	.groupToggleIcon {
-		padding: 0 10px;
-	}
+.dialogBodyText {
+	font-size: 16px;
+	padding-bottom: 10px;
 }

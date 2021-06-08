@@ -5,8 +5,8 @@
 /* eslint-disable @typescript-eslint/no-var-requires */
 import * as fs from 'fs'
 import * as path from 'path'
+import { Link } from '@covid-vax-bot/plan-schema'
 import { RunResult } from './types'
-import { Link } from '@ms-covidbot/state-plan-schema'
 
 const CACHE_DIR = path.join(__dirname, '../.cache/')
 
@@ -17,7 +17,7 @@ export function createOutputFolder(): void {
 }
 
 export function loadLinksToScrape(): Link[] {
-	const data = require('@ms-covidbot/state-plans/dist/info_links.json') as Link[]
+	const data = require('@covid-vax-bot/plans/dist/info_links.json') as Link[]
 	return data.filter((link) => link.scrape !== false)
 }
 

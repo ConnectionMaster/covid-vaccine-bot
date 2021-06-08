@@ -3,6 +3,8 @@
 .qualifierPanelContainer {
 	display: flex;
 	flex-direction: column;
+	position: sticky;
+	top: -10px;
 }
 
 .panelHeader {
@@ -16,6 +18,11 @@
 
 .panelBody {
 	padding: 0 20px;
+
+	.noQualifiers {
+		margin-top: 40px;
+		text-align: center;
+	}
 }
 
 .qualifierGroupItem {
@@ -31,5 +38,16 @@
 			background-color: $ms-color-gray40;
 			font-weight: 600;
 		}
+	}
+}
+
+.addQualiferHeaderButton {
+	cursor: pointer;
+	margin: 10px 0;
+	display: flex;
+
+	.addQualifierIcon {
+		color: $ms-color-themePrimary;
+		margin-right: 5px;
 	}
 }

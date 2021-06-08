@@ -1,0 +1,43 @@
+{
+	"links": {
+		"info": {
+			"text": "cdc/montana/state_link",
+			"url": "https://dphhs.mt.gov/covid19vaccine"
+		},
+		"eligibility_plan": {
+			"url": "https://dphhs.mt.gov/Portals/85/publichealth/documents/HAN/2021/HANAD2021-7.pdf?ver=2021-03-02-140830-467"
+		},
+		"providers": {
+			"url": "https://dphhs.mt.gov/publichealth/cdepi/diseases/coronavirusmt/covid19vaccineavailability",
+			"text": "c19.links/vax_providers"
+		},
+		"worflow": {}
+	},
+	"activePhase": "12_and_older",
+	"phases": [
+		{
+			"id": "16_and_older",
+			"label": "16 and older",
+			"qualifications": [
+				{
+					"question": "c19.eligibility.question/age.16_up"
+				}
+			]
+		},
+		{
+			"id": "12_and_older",
+			"label": "12 and older",
+			"qualifications": [
+				{
+					"question": "c19.eligibility.question/age.are_you_at",
+					"questionSms": "c19.eligibility.question.sms/age.are_you_at",
+					"questionVoice": "c19.eligibility.question.voice/age.are_you_at",
+					"moreInfoText": "c19.eligibility.moreinfo/age.are_you_at.mt.12_and_older",
+					"moreInfoTextSms": "c19.eligibility.moreinfo.sms/age.are_you_at.mt.12_and_older",
+					"moreInfoTextVoice": "c19.eligibility.moreinfo.voice/age.are_you_at.mt.12_and_older"
+				}
+			]
+		}
+	],
+	"noPhaseLabel": false
+}

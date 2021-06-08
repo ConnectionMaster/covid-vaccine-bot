@@ -1,0 +1,43 @@
+{
+	"links": {
+		"info": {
+			"text": "cdc/arizona/state_link",
+			"url": "https://azdhs.gov/preparedness/epidemiology-disease-control/infectious-disease-epidemiology/index.php#novel-coronavirus-vaccine"
+		},
+		"eligibility": {
+			"url": "https://www.azdhs.gov/documents/preparedness/epidemiology-disease-control/infectious-disease-epidemiology/novel-coronavirus/vaccine-phases.pdf",
+			"content": "pdf"
+		},
+		"scheduling": {
+			"text": "c19.links/schedule_vax",
+			"url": "https://podvaccine.azdhs.gov/"
+		},
+		"workflow": {
+			"url": "https://azdhs.gov/preparedness/epidemiology-disease-control/infectious-disease-epidemiology/index.php#novel-coronavirus-find-vaccine",
+			"text": "c19.links/vax_quiz"
+		},
+		"scheduling_phone": {
+			"url": "tel:602-542-1000",
+			"text": "c19.link/scheduling.phone.az"
+		},
+		"worflow": {}
+	},
+	"activePhase": "12_and_older",
+	"phases": [
+		{
+			"id": "12_and_older",
+			"label": "12 and Older",
+			"qualifications": [
+				{
+					"question": "c19.eligibility.question/age.are_you_at",
+					"questionSms": "c19.eligibility.question.sms/age.are_you_at",
+					"questionVoice": "c19.eligibility.question.voice/age.are_you_at",
+					"moreInfoText": "c19.eligibility.moreinfo/age.are_you_at.az.12_and_older",
+					"moreInfoTextSms": "c19.eligibility.moreinfo.sms/age.are_you_at.az.12_and_older",
+					"moreInfoTextVoice": "c19.eligibility.moreinfo.voice/age.are_you_at.az.12_and_older"
+				}
+			]
+		}
+	],
+	"noPhaseLabel": false
+}

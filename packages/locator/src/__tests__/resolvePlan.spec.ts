@@ -2,10 +2,14 @@
  * Copyright (c) Microsoft. All rights reserved.
  * Licensed under the MIT license. See LICENSE file in the project.
  */
+import { Region } from '@covid-vax-bot/plan-schema'
+import data from '@covid-vax-bot/plans/dist/policies.json'
 import { BingLocation, resolvePlan } from '..'
-import { Region } from '@ms-covidbot/state-plan-schema'
-import statesData from '@ms-covidbot/state-plans/dist/states.json'
 
+function embedStateRegions(regions: Region[]): Region[] {
+	const usa = (data as Region[]).find((t) => t.id === 'usa') as Region
+	return [{ ...usa, regions: regions }] as Region[]
+}
 describe('The Plan Locator', () => {
 	it('exists', () => {
 		expect(resolvePlan).toBeDefined()
@@ -15,12 +19,12 @@ describe('The Plan Locator', () => {
 		const location: BingLocation = {
 			adminDistrict: 'WA',
 			adminDistrict2: 'Kitsap County',
-			countryRegion: 'United States',
+			countryRegion: 'US',
 			formattedAddress: '98311, WA',
 			locality: 'Bremerton',
 			postalCode: '98311',
 		}
-		const plan = resolvePlan(location, statesData as Region[])
+		const plan = resolvePlan(location, data as Region[])
 		expect(plan).toBeDefined()
 		expect(plan.phase).toBeDefined()
 		expect(plan.phase?.id).toBeDefined()
@@ -31,16 +35,34 @@ describe('The Plan Locator', () => {
 		const location: BingLocation = {
 			adminDistrict: 'MA',
 			adminDistrict2: 'Suffolk County',
-			countryRegion: 'United States',
+			countryRegion: 'US',
 			formattedAddress: '02109, MA',
 			locality: 'Boston',
 			postalCode: '02109',
 		}
-		const plan = resolvePlan(location, statesData as Region[])
+		const plan = resolvePlan(location, data as Region[])
 		expect(plan).toBeDefined()
 		expect(plan.phase).toBeDefined()
 		expect(plan.phase?.id).toBeDefined()
 		expect(plan.phase?.qualifications).not.toHaveLength(0)
+		expect(plan.noPhaseLabel).toEqual(false)
+	})
+
+	it('can look up a plan in NY', () => {
+		const location: BingLocation = {
+			adminDistrict: 'NY',
+			adminDistrict2: 'New York',
+			countryRegion: 'US',
+			formattedAddress: '00011, NY',
+			locality: 'New York',
+			postalCode: '00011',
+		}
+		const plan = resolvePlan(location, data as Region[])
+		expect(plan).toBeDefined()
+		expect(plan.phase).toBeDefined()
+		expect(plan.phase?.id).toBeDefined()
+		expect(plan.phase?.qualifications).not.toHaveLength(0)
+		expect(plan.noPhaseLabel).toEqual(true)
 	})
 
 	it('can look up an overridden link with parent scope still available', () => {
@@ -93,11 +115,12 @@ describe('The Plan Locator', () => {
 			},
 		]
 		const plan = resolvePlan(
-			({
+			{
 				adminDistrict: 'AZ',
 				adminDistrict2: 'Maricopa',
-			} as any) as BingLocation,
-			regions
+				countryRegion: 'US',
+			} as BingLocation,
+			embedStateRegions(regions)
 		)
 		expect(plan).toBeDefined()
 		expect(plan.links.info).toBeDefined()
@@ -134,13 +157,32 @@ describe('The Plan Locator', () => {
 			},
 		]
 		const plan = resolvePlan(
-			({
+			{
 				adminDistrict: 'AZ',
 				adminDistrict2: 'Maricopa',
-			} as any) as BingLocation,
-			regions
+				countryRegion: 'US',
+			} as BingLocation,
+			embedStateRegions(regions)
 		)
 		expect(plan).toBeDefined()
 		expect(plan.phase?.id).toEqual('phase_1a')
+	})
+
+	it('can look up a plan in Paulau', () => {
+		const location: BingLocation = {
+			adminDistrict: 'PW',
+			adminDistrict2: '',
+			countryRegion: 'US',
+			formattedAddress: '',
+			locality: '',
+			postalCode: '',
+		}
+		const plan = resolvePlan(location, data as Region[])
+		expect(plan).toBeDefined()
+		expect(plan.unknownPhase).toEqual(false)
+		expect(plan.phase).toBeDefined()
+		expect(plan.phase?.id).toBeDefined()
+		expect(plan.phase?.qualifications).not.toHaveLength(0)
+		expect(plan.noPhaseLabel).toEqual(true)
 	})
 })

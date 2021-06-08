@@ -1,0 +1,12 @@
+{
+	"cosmosdb": {
+		"endpoint": "https://covid-data-cosmos.documents.azure.com:443/",
+		"key": null,
+		"database": "vaccination",
+		"container": "providers"
+	},
+	"vaccinefinder": {
+		"region": "us-east-1",
+		"bucket": "vaccinefinder-data"
+	}
+}
